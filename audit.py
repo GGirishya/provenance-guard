@@ -44,3 +44,39 @@ limiter = Limiter(
     storage_uri="memory://",
 )
  
+  
+# ── Helpers ────────────────────────────────────────────────────────────────────
+ 
+def _word_count(text: str) -> int:
+    return len(text.split())
+ 
+ 
+def _run_pipeline(text: str) -> dict:
+    """
+    Run all detection signals and return scored results.
+    Signal 3 (perplexity) is always included as part of the ensemble stretch.
+    """
+    wc = _word_count(text)
+ 
+    llm_score, llm_reasoning   = score_llm(text)
+    stylo_score, stylo_meta    = score_stylometrics(text)
+    perp_score, perp_meta      = score_perplexity(text)
+ 
+    combined = combine_scores(llm_score, stylo_score, wc, perp_score=perp_score)
+    attribution = attribution_from_score(combined)
+    label = generate_label(combined)
+ 
+    return {
+        "llm_score": llm_score,
+        "llm_reasoning": llm_reasoning,
+        "stylo_score": stylo_score,
+        "stylo_meta": stylo_meta,
+        "perp_score": perp_score,
+        "perp_meta": perp_meta,
+        "combined_score": combined,
+        "attribution": attribution,
+        "label": label,
+        "word_count": wc,
+    }
+ 
+ 
