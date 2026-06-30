@@ -20,8 +20,9 @@ from signal_llm import score_llm
 from signal_stylo import score_stylometrics
 from signal_perp import score_perplexity
 from confidence import combine_scores, attribution_from_score, generate_label
-from audit import log_classification, log_appeal, get_entry, get_recent_entries
+from audit import log_classification, log_appeal, get_entry, get_recent_entries, log_certificate, get_certificate
 from analytics import compute_analytics
+from certificate import validate_draft_history, validate_statement, issue_certificate
 
 load_dotenv()
 
@@ -226,14 +227,18 @@ def status(content_id):
     if not entry:
         return jsonify({"error": f"No submission found for content_id: {content_id}"}), 404
 
-    return jsonify({
+    cert = get_certificate(content_id)
+    response = {
         "content_id": content_id,
         "attribution": entry.get("attribution"),
         "confidence": entry.get("confidence"),
         "label_variant": entry.get("label_variant"),
         "status": entry.get("status"),
         "timestamp": entry.get("timestamp"),
-    }), 200
+    }
+    if cert:
+        response["certificate"] = cert.get("badge")
+    return jsonify(response), 200
 
 
 
@@ -259,6 +264,70 @@ def analytics():
 
     data = compute_analytics()
     return jsonify(data), 200
+
+
+@app.route("/verify", methods=["POST"])
+def verify():
+    """
+    Submit evidence to earn a Verified Human certificate.
+
+    Request body (JSON):
+        content_id      (str, required) — from the original /submit response
+        creator_id      (str, required) — must match original submission
+        evidence_type   (str, required) — "draft_history" or "statement"
+        evidence        (str, required) — the draft text or written statement
+
+    Response (JSON):
+        certificate     — issued certificate with badge text
+        validation_note — what the system found in the evidence
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    content_id    = data.get("content_id", "").strip()
+    creator_id    = data.get("creator_id", "").strip()
+    evidence_type = data.get("evidence_type", "").strip()
+    evidence      = data.get("evidence", "").strip()
+
+    if not all([content_id, creator_id, evidence_type, evidence]):
+        return jsonify({"error": "Missing required fields: content_id, creator_id, evidence_type, evidence"}), 400
+
+    if evidence_type not in ("draft_history", "statement"):
+        return jsonify({"error": "evidence_type must be 'draft_history' or 'statement'"}), 400
+
+    original = get_entry(content_id)
+    if not original:
+        return jsonify({"error": f"No submission found for content_id: {content_id}"}), 404
+
+    if original.get("status") == "verified_human":
+        cert = get_certificate(content_id)
+        return jsonify({
+            "message": "This content already has a Verified Human certificate.",
+            "certificate": cert,
+        }), 200
+
+    # Validate evidence
+    if evidence_type == "draft_history":
+        is_valid, note = validate_draft_history(evidence)
+    else:
+        is_valid, note = validate_statement(evidence)
+
+    if not is_valid:
+        return jsonify({
+            "status": "rejected",
+            "reason": note,
+        }), 422
+
+    # Issue certificate
+    cert = issue_certificate(content_id, creator_id, evidence_type)
+    log_certificate(content_id, cert)
+
+    return jsonify({
+        "status": "verified_human",
+        "validation_note": note,
+        "certificate": cert,
+    }), 200
 
 # ── Rate limit error handler ───────────────────────────────────────────────────
 

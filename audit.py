@@ -99,3 +99,33 @@ def get_recent_entries(limit: int = 50) -> list:
     """Return the most recent log entries, newest first."""
     entries = _read_log()
     return list(reversed(entries[-limit:]))
+
+
+def log_certificate(content_id: str, certificate: dict) -> None:
+    """Store a verified human certificate and update content status."""
+    entries = _read_log()
+
+    # Update the original classification entry
+    for entry in entries:
+        if entry.get("content_id") == content_id and entry.get("entry_type") == "classification":
+            entry["status"] = "verified_human"
+            entry["certificate"] = certificate
+            break
+
+    # Append certificate entry
+    cert_entry = {
+        "entry_type": "certificate",
+        "content_id": content_id,
+        **certificate,
+    }
+    entries.append(cert_entry)
+    _write_log(entries)
+
+
+def get_certificate(content_id: str) -> dict | None:
+    """Return the certificate for a content_id, or None."""
+    entries = _read_log()
+    for entry in entries:
+        if entry.get("entry_type") == "certificate" and entry.get("content_id") == content_id:
+            return entry
+    return None
