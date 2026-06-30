@@ -63,5 +63,57 @@
     "perp_score": 0.0,
     "label_variant": "high_confidence_human",
     "status": "classified"
+  },
+  {
+    "entry_type": "classification",
+    "content_id": "b7f196c0-6a27-43da-8715-5bc95c075daf",
+    "creator_id": "calibration-test",
+    "timestamp": "2026-06-30T20:35:53.148749+00:00",
+    "attribution": "uncertain",
+    "confidence": 0.6182,
+    "llm_score": 0.8,
+    "stylo_score": 0.3883,
+    "perp_score": 0.0,
+    "label_variant": "uncertain",
+    "status": "classified"
+  },
+  {
+    "entry_type": "classification",
+    "content_id": "30b0c480-f79e-4343-80d5-88d395d34366",
+    "creator_id": "calibration-test",
+    "timestamp": "2026-06-30T20:35:53.890021+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.2102,
+    "llm_score": 0.2,
+    "stylo_score": 0.3769,
+    "perp_score": 0.0909,
+    "label_variant": "high_confidence_human",
+    "status": "classified"
+  },
+  {
+    "entry_type": "classification",
+    "content_id": "a4265eed-77ff-42bb-b690-2c3c9d2ec681",
+    "creator_id": "calibration-test",
+    "timestamp": "2026-06-30T20:35:54.564247+00:00",
+    "attribution": "uncertain",
+    "confidence": 0.534,
+    "llm_score": 0.7,
+    "stylo_score": 0.4695,
+    "perp_score": 0.0,
+    "label_variant": "uncertain",
+    "status": "classified"
+  },
+  {
+    "entry_type": "classification",
+    "content_id": "a0bfd1d5-90c1-4ee0-a204-bd3a43957976",
+    "creator_id": "calibration-test",
+    "timestamp": "2026-06-30T20:35:55.135232+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.3498,
+    "llm_score": 0.4,
+    "stylo_score": 0.4652,
+    "perp_score": 0.0,
+    "label_variant": "high_confidence_human",
+    "status": "classified"
   }
 ]
