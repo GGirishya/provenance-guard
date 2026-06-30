@@ -21,6 +21,7 @@ from signal_stylo import score_stylometrics
 from signal_perp import score_perplexity
 from confidence import combine_scores, attribution_from_score, generate_label
 from audit import log_classification, log_appeal, get_entry, get_recent_entries
+from analytics import compute_analytics
 
 load_dotenv()
 
@@ -234,6 +235,30 @@ def status(content_id):
         "timestamp": entry.get("timestamp"),
     }), 200
 
+
+
+
+@app.route("/analytics", methods=["GET"])
+def analytics():
+    """
+    Return detection pattern analytics and system health metrics.
+    - Browser requests (Accept: text/html) serve the dashboard HTML page.
+    - API requests return JSON.
+
+    Metrics:
+        - Total submissions (all time + last 7 days)
+        - Attribution breakdown (% AI / uncertain / human)
+        - Appeal rate
+        - Signal disagreement rate
+    """
+    # Serve HTML dashboard for browser requests
+    accept = request.headers.get("Accept", "")
+    if "text/html" in accept:
+        from flask import render_template
+        return render_template("analytics.html")
+
+    data = compute_analytics()
+    return jsonify(data), 200
 
 # ── Rate limit error handler ───────────────────────────────────────────────────
 
