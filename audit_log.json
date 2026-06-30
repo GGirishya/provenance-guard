@@ -115,5 +115,43 @@
     "perp_score": 0.0,
     "label_variant": "high_confidence_human",
     "status": "classified"
+  },
+  {
+    "entry_type": "classification",
+    "content_id": "198e9fd9-2aca-491e-a387-b2d0e690e187",
+    "creator_id": "test-user-1",
+    "timestamp": "2026-06-30T21:00:31.185806+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.3493,
+    "llm_score": 0.4,
+    "stylo_score": 0.4618,
+    "perp_score": 0.0,
+    "label_variant": "high_confidence_human",
+    "status": "verified_human",
+    "certificate": {
+      "certificate_id": "CERT-2A509BB44351",
+      "content_id": "198e9fd9-2aca-491e-a387-b2d0e690e187",
+      "creator_id": "test-user-1",
+      "evidence_type": "statement",
+      "issued_at": "2026-06-30T21:01:53.023779+00:00",
+      "status": "verified_human",
+      "badge": {
+        "variant": "verified_human",
+        "text": "\ud83c\udfc5 Verified Human-Written\n\nThis creator submitted evidence of human authorship that was reviewed by our system. The original content label remains for transparency, but this badge indicates the creator has provided supporting documentation."
+      }
+    }
+  },
+  {
+    "entry_type": "certificate",
+    "content_id": "198e9fd9-2aca-491e-a387-b2d0e690e187",
+    "certificate_id": "CERT-2A509BB44351",
+    "creator_id": "test-user-1",
+    "evidence_type": "statement",
+    "issued_at": "2026-06-30T21:01:53.023779+00:00",
+    "status": "verified_human",
+    "badge": {
+      "variant": "verified_human",
+      "text": "\ud83c\udfc5 Verified Human-Written\n\nThis creator submitted evidence of human authorship that was reviewed by our system. The original content label remains for transparency, but this badge indicates the creator has provided supporting documentation."
+    }
   }
 ]

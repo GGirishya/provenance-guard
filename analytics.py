@@ -64,11 +64,16 @@ def compute_analytics() -> dict:
         subset = [e["confidence"] for e in classifications if e.get("attribution") == attr]
         return round(sum(subset) / len(subset), 4) if subset else None
 
+    certificates = [e for e in entries if e.get("entry_type") == "certificate"]
+    cert_rate = round((len(certificates) / total * 100), 1) if total > 0 else 0.0
+
     return {
         "total_submissions": total,
         "submissions_last_7_days": len(recent),
         "total_appeals": total_appeals,
         "appeal_rate_pct": appeal_rate,
+        "total_certificates": len(certificates),
+        "certificate_rate_pct": cert_rate,
         "attribution_breakdown": attribution_breakdown,
         "signal_disagreement_rate_pct": disagreement_rate,
         "avg_confidence": {
