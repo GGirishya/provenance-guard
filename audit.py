@@ -80,3 +80,173 @@ def _run_pipeline(text: str) -> dict:
     }
  
  
+ 
+ 
+# ── Routes ─────────────────────────────────────────────────────────────────────
+ 
+@app.route("/submit", methods=["POST"])
+@limiter.limit("10 per minute;100 per day")
+def submit():
+    """
+    Accept a piece of text for attribution analysis.
+ 
+    Request body (JSON):
+        text        (str, required)  — the content to analyze
+        creator_id  (str, required)  — identifier for the submitting creator
+ 
+    Response (JSON):
+        content_id   — unique ID for this submission (save for appeals)
+        attribution  — "likely_ai" | "uncertain" | "likely_human"
+        confidence   — combined score 0.0–1.0
+        label        — transparency label dict {variant, text, score_pct}
+        signals      — individual signal scores
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Request body must be JSON"}), 400
+ 
+    text = data.get("text", "").strip()
+    creator_id = data.get("creator_id", "").strip()
+ 
+    if not text:
+        return jsonify({"error": "Missing required field: text"}), 400
+    if not creator_id:
+        return jsonify({"error": "Missing required field: creator_id"}), 400
+    if len(text) > 50_000:
+        return jsonify({"error": "Text exceeds maximum length of 50,000 characters"}), 400
+ 
+    content_id = str(uuid.uuid4())
+    result = _run_pipeline(text)
+ 
+    # Write to audit log
+    log_classification(
+        content_id=content_id,
+        creator_id=creator_id,
+        attribution=result["attribution"],
+        confidence=result["combined_score"],
+        llm_score=result["llm_score"],
+        stylo_score=result["stylo_score"],
+        perp_score=result["perp_score"],
+        label_variant=result["label"]["variant"],
+    )
+ 
+    return jsonify({
+        "content_id": content_id,
+        "attribution": result["attribution"],
+        "confidence": result["combined_score"],
+        "label": result["label"],
+        "signals": {
+            "llm_score": result["llm_score"],
+            "llm_reasoning": result["llm_reasoning"],
+            "stylo_score": result["stylo_score"],
+            "perp_score": result["perp_score"],
+        },
+        "word_count": result["word_count"],
+    }), 200
+ 
+ 
+@app.route("/appeal", methods=["POST"])
+def appeal():
+    """
+    Contest a classification result.
+ 
+    Request body (JSON):
+        content_id        (str, required) — from the original /submit response
+        creator_reasoning (str, required) — why you believe the classification is wrong
+ 
+    Response (JSON):
+        status    — "under_review"
+        message   — confirmation string
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Request body must be JSON"}), 400
+ 
+    content_id = data.get("content_id", "").strip()
+    reasoning  = data.get("creator_reasoning", "").strip()
+ 
+    if not content_id:
+        return jsonify({"error": "Missing required field: content_id"}), 400
+    if not reasoning:
+        return jsonify({"error": "Missing required field: creator_reasoning"}), 400
+ 
+    original = get_entry(content_id)
+    if not original:
+        return jsonify({"error": f"No submission found for content_id: {content_id}"}), 404
+ 
+    if original.get("status") == "under_review":
+        return jsonify({
+            "status": "under_review",
+            "message": "An appeal for this content is already under review.",
+        }), 200
+ 
+    log_appeal(
+        content_id=content_id,
+        creator_id=original.get("creator_id", "unknown"),
+        creator_reasoning=reasoning,
+        original_attribution=original.get("attribution"),
+        original_confidence=original.get("confidence"),
+    )
+ 
+    return jsonify({
+        "status": "under_review",
+        "message": "Your appeal has been received and will be reviewed.",
+        "content_id": content_id,
+        "original_attribution": original.get("attribution"),
+    }), 200
+ 
+ 
+@app.route("/log", methods=["GET"])
+def log():
+    """
+    Return recent audit log entries as JSON.
+    In production this endpoint would require authentication.
+ 
+    Query params:
+        limit  (int, optional, default 50) — max entries to return
+    """
+    try:
+        limit = int(request.args.get("limit", 50))
+        limit = max(1, min(limit, 200))
+    except ValueError:
+        limit = 50
+ 
+    entries = get_recent_entries(limit=limit)
+    return jsonify({
+        "count": len(entries),
+        "entries": entries,
+    }), 200
+ 
+ 
+@app.route("/status/<content_id>", methods=["GET"])
+def status(content_id):
+    """
+    Get the current status and classification for a submission.
+ 
+    Returns 404 if content_id is not found.
+    """
+    entry = get_entry(content_id)
+    if not entry:
+        return jsonify({"error": f"No submission found for content_id: {content_id}"}), 404
+ 
+    return jsonify({
+        "content_id": content_id,
+        "attribution": entry.get("attribution"),
+        "confidence": entry.get("confidence"),
+        "label_variant": entry.get("label_variant"),
+        "status": entry.get("status"),
+        "timestamp": entry.get("timestamp"),
+    }), 200
+ 
+ 
+# ── Rate limit error handler ───────────────────────────────────────────────────
+ 
+@app.errorhandler(429)
+def rate_limit_exceeded(e):
+    return jsonify({
+        "error": "Rate limit exceeded",
+        "message": str(e.description),
+        "retry_after": "Please wait before submitting again.",
+    }), 429
+ 
+ 
