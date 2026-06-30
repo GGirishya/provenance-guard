@@ -9,7 +9,10 @@ Returns a float 0.0–1.0 (higher = more likely AI-generated).
 import json
 import os
 from groq import Groq
+from dotenv import load_dotenv
 
+load_dotenv()
+ 
 _client = None
 
 
