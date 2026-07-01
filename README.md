@@ -228,7 +228,7 @@ On receipt the system: updates the submission status to `under_review`, appends 
 
 ---
 
-## Provenance Certificate (Stretch)
+## Provenance Certificate 
 
 Creators can earn a **Verified Human** badge by submitting authorship evidence via `POST /verify`.
 
@@ -254,7 +254,7 @@ The original transparency label is preserved alongside the badge — the certifi
 
 ---
 
-## Analytics Dashboard (Stretch)
+## Analytics Dashboard 
 
 Available at `GET /analytics` — serves an HTML dashboard in the browser, JSON for API requests.
 
